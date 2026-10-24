@@ -1,9 +1,13 @@
 const http = require("http");
 const { WebSocketServer, WebSocket } = require("ws");
+const { Pool } = require("pg");
 
 const PORT = Number(process.env.PORT || 10000);
 const MAX_PLAYERS = 100;
 const rooms = new Map();
+const pool = process.env.DATABASE_URL
+  ? new Pool({ connectionString: process.env.DATABASE_URL, ssl: process.env.DATABASE_SSL === "false" ? false : { rejectUnauthorized: false }, max: 3, idleTimeoutMillis: 30000, connectionTimeoutMillis: 5000 })
+  : null;
 
 function safeName(value) {
   return String(value || "Player").replace(/[^\p{L}\p{N}_ -]/gu, "").trim().slice(0, 18) || "Player";
@@ -13,6 +17,9 @@ function roomName(value) {
 }
 function snapshot(room) {
   return [...room.values()].map(p => ({ id: p.id, name: p.name, x: p.x, y: p.y, map: p.map, joinedAt: p.joinedAt }));
+}
+function onlineCount() {
+  return [...rooms.values()].reduce((n, room) => n + room.size, 0);
 }
 function broadcast(room, payload, except) {
   const data = JSON.stringify(payload);
@@ -24,21 +31,44 @@ function getRoom(name) {
   if (!rooms.has(name)) rooms.set(name, new Map());
   return rooms.get(name);
 }
-const server = http.createServer((req, res) => {
+function sendJson(res, status, data) {
+  res.writeHead(status, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store", "Access-Control-Allow-Origin": "*" });
+  res.end(JSON.stringify(data));
+}
+const server = http.createServer(async (req, res) => {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
   if (req.method === "OPTIONS") { res.writeHead(204); return res.end(); }
   if (req.url === "/health" || req.url === "/") {
-    const online = [...rooms.values()].reduce((n, room) => n + room.size, 0);
-    res.writeHead(200, { "Content-Type": "application/json; charset=utf-8" });
-    return res.end(JSON.stringify({ status: "ok", service: "mu-online-multiplayer-gateway", online, rooms: rooms.size, gameplaySync: "gateway-ready; original WASM game engine is client-side solo" }));
+    return sendJson(res, 200, { status: "ok", service: "mu-online-multiplayer-gateway", online: onlineCount(), rooms: rooms.size, databaseConfigured: Boolean(pool) });
+  }
+  if (req.url === "/api/stats") {
+    const base = { status: "ok", onlinePlayers: onlineCount(), rooms: rooms.size, maxPlayers: MAX_PLAYERS, updatedAt: new Date().toISOString(), databaseConnected: false, totalAccounts: null, totalCharacters: null, accountsCreatedToday: null, topCharacters: [] };
+    if (!pool) return sendJson(res, 200, { ...base, databaseMessage: "DATABASE_URL ainda não configurada no serviço." });
+    try {
+      const result = await pool.query(`
+        SELECT
+          (SELECT COUNT(*)::int FROM public.accounts WHERE COALESCE(deactivated_at, NULL) IS NULL AND COALESCE(is_ai, false) = false) AS total_accounts,
+          (SELECT COUNT(*)::int FROM public.characters) AS total_characters,
+          (SELECT COUNT(*)::int FROM public.accounts WHERE created_at >= date_trunc('day', now())) AS accounts_today
+      `);
+      let topCharacters = [];
+      try {
+        const rank = await pool.query("SELECT name, class, level, realm FROM public.characters ORDER BY level DESC, name ASC LIMIT 5");
+        topCharacters = rank.rows.map(c => ({ name: c.name, class: c.class, level: c.level, realm: c.realm }));
+      } catch (_) {}
+      return sendJson(res, 200, { ...base, databaseConnected: true, totalAccounts: result.rows[0].total_accounts, totalCharacters: result.rows[0].total_characters, accountsCreatedToday: result.rows[0].accounts_today, topCharacters });
+    } catch (e) {
+      console.error("Database stats query failed:", e.message);
+      return sendJson(res, 200, { ...base, databaseMessage: "Banco configurado, mas a consulta falhou. Verifique a URL e as permissões." });
+    }
   }
   res.writeHead(404); res.end("Not found");
 });
 const wss = new WebSocketServer({ server, path: "/ws", maxPayload: 4096 });
 wss.on("connection", (ws) => {
-  if ([...rooms.values()].reduce((n, room) => n + room.size, 0) >= MAX_PLAYERS) {
+  if (onlineCount() >= MAX_PLAYERS) {
     ws.send(JSON.stringify({ type: "error", message: "Servidor cheio. Tente novamente mais tarde." }));
     return ws.close(1013, "Server full");
   }
