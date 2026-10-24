@@ -93,7 +93,7 @@
       if (m.type==="welcome") {
         myId=m.id; roster.clear();
         (m.players||[]).forEach(p=>roster.set(p.id,p));
-        if (!roster.has(myId)) roster.set(myId,{id:myId,name:$("muMultiName").value,x:460+Math.random()*80,y:570+Math.random()*90,map:currentRoom});
+        roster.set(myId,{...(roster.get(myId)||{}),id:myId,name:$("muMultiName").value,x:460+Math.random()*80,y:570+Math.random()*90,map:currentRoom});
         renderRoster(); drawAll();
         addMessage("Você entrou na sala " + m.room + ".", "", true);
         // Publish an initial position so everyone sees this player immediately.
