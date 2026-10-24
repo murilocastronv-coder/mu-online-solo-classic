@@ -47,9 +47,9 @@ async function refreshStats(){
   document.getElementById("characters").textContent=d.totalCharacters==null?"—":fmt(d.totalCharacters);
   document.getElementById("today").textContent=d.accountsCreatedToday==null?"—":fmt(d.accountsCreatedToday);
   document.getElementById("serverlabel").textContent="Servidor "+(d.status==="ok"?"respondendo":"indisponível");
-  document.getElementById("dbstatus").textContent=d.databaseConnected?"Banco conectado":"Banco ainda não conectado";
-  document.getElementById("dbdetail").textContent=d.databaseConnected?"Contas e personagens consultados em tempo real":"Falta configurar DATABASE_URL na Render";
-  document.getElementById("dbnote").textContent=d.databaseConnected?"Dados do PostgreSQL atualizados em tempo real.":"O servidor responde, mas a conexão PostgreSQL ainda precisa ser configurada na Render para mostrar as contas reais.";
+  document.getElementById("dbstatus").textContent=d.databaseConnected?"Banco conectado":"Snapshot do banco Murioo";
+  document.getElementById("dbdetail").textContent=d.databaseConnected?"Contas e personagens consultados em tempo real":"Última leitura 24/10/2026; atualização ao vivo pendente";
+  document.getElementById("dbnote").textContent=d.databaseConnected?"Dados do PostgreSQL atualizados em tempo real.":"Contas/personagens mostram a última leitura do banco Murioo (24/10/2026); conecte DATABASE_URL na Render para atualização ao vivo.";
   document.getElementById("rankcontent").innerHTML="";
   if(d.topCharacters&&d.topCharacters.length){
    const table=document.createElement("table");table.className="table";
