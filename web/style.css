@@ -1345,3 +1345,94 @@ kbd {
   box-shadow: 0 0 10px rgba(56, 189, 248, 0.25);
 }
 
+
+
+/* Mobile usability and low-power rendering improvements */
+@media (max-width: 760px), (pointer: coarse) {
+  html, body {
+    width: 100%;
+    height: 100%;
+    min-height: 100%;
+    overscroll-behavior: none;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  header.mu-topbar {
+    height: 44px;
+    padding: 0 6px;
+    gap: 4px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  header.mu-topbar::-webkit-scrollbar { display: none; }
+  .mu-topbar-left, .mu-topbar-right { gap: 4px; flex-shrink: 0; }
+  .mu-brand-title { font-size: 12px; letter-spacing: .4px; }
+  .mu-brand-desc, .mu-brand-sep, .mu-realm-badge, .mu-top-sep,
+  #muLinkIssues, #muLinkDiscussions, #muBtnImport, #muBtnExport {
+    display: none !important;
+  }
+  .mu-top-btn {
+    min-width: 38px;
+    height: 34px;
+    padding: 0 8px;
+    font-size: 12px;
+    touch-action: manipulation;
+  }
+  .mu-btn-icon { width: 17px; height: 17px; }
+  canvas#canvas {
+    top: 44px;
+    width: 100vw;
+    height: calc(100dvh - 44px);
+    height: calc(100vh - 44px);
+    touch-action: none;
+  }
+
+  #muStick, #muRBtn, #muKeyBtn {
+    touch-action: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .mu-modal-dialog {
+    width: calc(100vw - 16px) !important;
+    max-width: none !important;
+    max-height: calc(100dvh - 20px) !important;
+    margin: 10px 8px !important;
+    overflow: auto;
+  }
+  .mu-modal-tabs {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    -webkit-overflow-scrolling: touch;
+  }
+  .mu-modal-tabs button { flex: 0 0 auto; min-height: 42px; }
+  .mu-modal-body { overflow: auto; -webkit-overflow-scrolling: touch; }
+  button, a { -webkit-tap-highlight-color: transparent; }
+}
+
+/* Small screens: keep gameplay controls visible without covering the viewport */
+@media (max-width: 480px) {
+  .mu-brand-box { gap: 3px; }
+  .mu-brand-title { font-size: 11px; }
+  .mu-topbar-right { gap: 3px; }
+  .mu-top-btn { min-width: 34px; padding: 0 6px; }
+  #muBtnInfo .mu-btn-text, #muBtnFullscreen .mu-btn-text { display: none; }
+  .mu-toast { max-width: calc(100vw - 32px); text-align: center; }
+}
+
+/* Reduce expensive decorative effects on touch devices to help frame pacing */
+@media (pointer: coarse) {
+  header.mu-topbar {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+  .mu-toast {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+  .mu-btn-auto.active {
+    animation: none;
+    box-shadow: 0 0 8px rgba(239, 68, 68, .35);
+  }
+  .mu-top-btn, .mu-realm-badge { transition: none; }
+}
