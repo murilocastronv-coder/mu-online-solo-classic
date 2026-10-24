@@ -1,0 +1,13 @@
+{
+  "name": "mu-online-solo-classic",
+  "version": "1.0.0",
+  "private": true,
+  "description": "MU Online Solo Classic browser client with realtime multiplayer gateway",
+  "main": "multiplayer-server.js",
+  "scripts": {
+    "start": "node multiplayer-server.js"
+  },
+  "dependencies": {
+    "ws": "^8.18.0"
+  }
+}
