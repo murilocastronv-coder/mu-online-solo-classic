@@ -8,6 +8,7 @@
     "start": "node multiplayer-server.js"
   },
   "dependencies": {
-    "ws": "^8.18.0"
+    "ws": "^8.18.0",
+    "pg": "^8.13.1"
   }
 }
